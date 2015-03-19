@@ -31,7 +31,7 @@ public class Multithreading
     // Fair семафор
     private static final Semaphore semaphore = new Semaphore(MAX_AVAILABLE, true);
 
-    public static void main(String[] args)cd
+    public static void main(String[] args)
     {
         Future<?> a = executorService.submit(new SimpleRunnableTask("A"));
         Future<?> d = executorService.submit(new SimpleRunnableTask("D"));
