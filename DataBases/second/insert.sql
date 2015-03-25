@@ -1,8 +1,9 @@
 -- Лабораторная №2.
 -- Вариант №15 по дисциплине "Базы данных".
--- Примеры использования insert для корректных данных.
 -- СПБ ГУАП 2015.
 
+
+-- Примеры использования insert для корректных данных.
 insert into faculty values ('1')
 insert into faculty values ('2')
 insert into faculty values ('3')
@@ -71,3 +72,31 @@ insert into class values('лаб', 'пт', 11, 1211)
 insert into class values('лекц', 'пт', 31, 4211)
 insert into class values('лекц', 'пт', 22, 3221)
 insert into class values('курс', 'пт', 21, 4231)
+
+-- Примеры использования insert  для некорректных данных (нарушающих ограничения и ссылочную целостность): 
+insert into audience values (11, 10)
+go
+
+insert into faculty values ('10')
+go
+
+insert into uni_group values (1211, '1')
+go
+
+-- Примеры использования update для некорректных данных (нарушающих ограничения и ссылочную целостность): 
+update audience set corps = 10 where id = 1
+go
+
+-- Примеры использования delete для корректных данных: 
+delete from class where  id = 2
+go
+
+-- Пример delete, вызывающий каскадные изменения и удаление данных:
+delete from audience where id = 1
+go
+
+-- Примеры использования alter table для корректировки структуры таблиц:
+alter table audience add duty varchar(50)
+go
+alter table audience drop column duty 
+go
