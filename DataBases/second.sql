@@ -2,7 +2,6 @@
 -- Вариант №15 по дисциплине "Базы данных".
 -- СПБ ГУАП 2015.
 
-
 -- Примеры использования insert для корректных данных.
 insert into faculty values ('1')
 insert into faculty values ('2')
@@ -72,6 +71,14 @@ insert into class values('лаб', 'пт', 11, 1211)
 insert into class values('лекц', 'пт', 31, 4211)
 insert into class values('лекц', 'пт', 22, 3221)
 insert into class values('курс', 'пт', 21, 4231)
+
+-- Вывод набора данных, содержащихся в таблицах БД.
+select * from audience
+select * from corps
+select * from class
+select * from faculty
+select * from uni_group
+go
 
 -- Примеры использования insert  для некорректных данных (нарушающих ограничения и ссылочную целостность): 
 insert into audience values (11, 10)
