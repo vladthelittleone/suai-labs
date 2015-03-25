@@ -1,3 +1,7 @@
+-- Лабораторная №1.
+-- Вариант №15 по дисциплине "Базы данных".
+-- СПБ ГУАП 2015.
+
 create table corps 
 (
 	id int identity primary key,
