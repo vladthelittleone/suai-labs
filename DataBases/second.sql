@@ -1,3 +1,7 @@
+-- Лабораторная №2.
+-- Вариант №15 по дисциплине "Базы данных".
+-- СПБ ГУАП 2015.
+
 insert into faculty values ('1')
 insert into faculty values ('2')
 insert into faculty values ('3')
