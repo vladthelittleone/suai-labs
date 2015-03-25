@@ -1,4 +1,3 @@
--- Лабораторная №2.
 -- Вариант №15 по дисциплине "Базы данных".
 -- СПБ ГУАП 2015.
 
@@ -41,7 +40,7 @@ insert into audience values (23, 2)
 insert into audience values (31, 3)
 insert into audience values (32, 3)
 
-insert into class values('лекц', 'пн', 12, 1212)
+insert into class values('лекц', 'пн', 12, 1221)
 insert into class values('лаб', 'пн', 11, 1211)
 insert into class values('лекц', 'пн', 31, 4211)
 insert into class values('лекц', 'пн', 22, 3231)
@@ -65,8 +64,8 @@ insert into class values('лаб', 'чт', 22, 2241)
 insert into class values('лаб', 'чт', 21, 1221)
 insert into class values('лекц', 'чт', 21, 1231)
 
-insert into class values('лекц', 'пт', 12, 1212)
+insert into class values('лекц', 'пт', 12, 1221)
 insert into class values('лаб', 'пт', 11, 1211)
 insert into class values('лекц', 'пт', 31, 4211)
-insert into class values('лекц', 'пт', 22, 3212)
+insert into class values('лекц', 'пт', 22, 3221)
 insert into class values('курс', 'пт', 21, 4231)
