@@ -20,9 +20,9 @@ start:
    mess4 db 'D = $'
   
   
-   var_a  db 0     ;  
-   var_b  db 0     ;
-   var_d  db 0     ;
+   var_a  db 0     ; A variable
+   var_b  db 0     ; B variable
+   var_d  db 0     ; D variable
    
 ; Data input and calculation (d*a)/(a+b)
 ; Calls GOTO_XY, WRITE_STR, READ_STR,
@@ -33,23 +33,23 @@ main proc near
     push dx
                       
     mov  buf[0],5     ; Size of input buffer (4 symbol + CR)
-                      ; Real size after reading is 1¡+1¡+5¡=7¡   
+                      ; Real size after reading is 1¡+1¡+5¡=7¡ 
+                      ; See INT 21 AH = 0Ah function for buffer structure.  
    
     ; Clear screen
     call clear_scr  
-    lea dx, mess1     ;  Link dx register to mess1 adress. Formaly dx is pointer to mess1.
-    call write_str    ;  Using int 21h for string output. Need DS:DX = pointer to string ending in "$". 
+    lea dx, mess1     ; Link dx register to mess1 adress. Formaly dx is pointer to mess1.
+    call write_str    ; Using int 21h for string output. Need DS:DX = pointer to string ending in "$". 
     call cr
     
-     ; à¨£« è¥­¨¥ ª ¢¢®¤ã á¨¬¢®«  € 
-    lea dx, mess2     ;  ‡ £àã§ª   ¤à¥á  áâà®ª¨ ¢ Dx = (mov dx,offset mess2)
-    call write_str    ;  ‚ë¢®¤ áâà®ª¨    
+     ; Enter symbol A
+    lea dx, mess2     ; Put string number to Dx = (mov dx, offset mess2)
+    call write_str    ; String output 
       
    
-    lea dx, buf       ;  ‡ £àã§ª   ¤à¥á  ¡ãä¥à  ¢¢®¤¨¬ëå á¨¬¢®«®¢ ¢ Dx
-    ; ¤à¥á ¡ãä¥à  ¢ DS:DX 
-    call read_str     ;  —â¥­¨¥ áâà®ª¨ ¢ ¡ãä¥à ¨á¯ int 21h
-    call str_to_int   ;  ¥à¥¢®¤ áâà®ª¨ ¢ ç¨á«® ¥§ã«ìâ â ¢ DX   
+    lea dx, buf       ; Put buffer address to dx. Buffer adress now in DS:DX.
+    call read_str     ; Read string to buffer, using int 21h.
+    call str_to_int   ; Translate string to integer. Result writed to DX reg.   
     mov var_a,dl   
     
    
@@ -403,7 +403,7 @@ dot endp
 ;
 ; AH = 09         
 ;   
-; parameters:
+; Parameters:
 ;
 ; DS:DX = pointer to string ending in "$"   
 ;
@@ -412,7 +412,6 @@ dot endp
 ; - outputs character string to STDOUT up to "$"
 ; - backspace is treated as non-destructive
 ; - if Ctrl-Break is detected, INT 23 is executed
-
 write_str proc near 
   push ax
   mov ah,09h
@@ -422,8 +421,32 @@ write_str proc near
 write_str endp    
 
 
-; —¨â ¥â áâà®ªã ¢ ¡ãä¥à, ä®à¬ â ¢å®¤­®£® ¡ãä¥à  ¢ ‘¯à ¢ª¥ ¯® 0Ah int 21h 
-; DS:DX 
+; Read string and write it to buffer
+;
+; AH = 0A 
+;
+; Parameters: 
+;
+; DS:DX = pointer to input buffer of the format:
+;
+; | max | count |  BUFFER (N bytes)
+;    |	  |	     `------ input buffer
+;    |	  `------------ number of characters returned (byte)
+;    `-------------- maximum number of characters to read (byte)
+;          
+; Last symbol is ODH (CR).     
+;
+; returns nothing
+;
+; - since strings can be pre-loaded, it is recommended that the
+;   default string be terminated with a CR
+; - N bytes of data are read from STDIN into buffer+2
+; - max buffer size is 255, minimum buffer size is 1 byte
+; - chars up to and including a CR are placed into the buffer
+;   beginning at byte 2;	Byte 1 returns the number of chars
+;   placed into the buffer  (extended codes take 2 characters)
+; - DOS editing keys are active during this call
+; - INT 23 is called if Ctrl-Break or Ctrl-C detected
 read_str proc near 
   push ax
   mov al,var_a
@@ -432,14 +455,15 @@ read_str proc near
   pop ax
   ret
 read_str endp    
-
+       
+; Program exit
 dos_exit proc
 int 20h 
 dos_exit endp 
 
-; ª®­¥æ á¥£¬¥­â  
+; Segment end.
 codesg  ends    
 
-; ª®­¥æ ¯à®£à ¬¬ë
+; Program end.
 end start
 
