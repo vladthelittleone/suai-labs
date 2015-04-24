@@ -1,4 +1,4 @@
-title FirsLab
+                    title FirsLab
 ;
 codesg segment para "code" ; Code segment start. (codesg - segment name, para - segment adress a multiply of 16, "code" - type of segment) 
 assume cs:codesg, ds:codesg,  ss:codesg,  es:codesg ; Set functionality of segment. It can be stack, code, etc. In com file one segment - code. 	
@@ -20,23 +20,22 @@ start:
    mess4 db 'D = $'
   
   
-   var_a  db 0     ; 
+   var_a  db 0     ;  
    var_b  db 0     ;
    var_d  db 0     ;
    
-
-;‚¢®¤ ¤ ­­ëå ¨ ¢ëç¨á«¥­¨¥ ¢ëà ¦¥­¨ï (d*a)/(a+b)
-;‚ë§ë¢ ¥â GOTO_XY, WRITE_STR, READ_STR,
+; Data input and calculation (d*a)/(a+b)
+; Calls GOTO_XY, WRITE_STR, READ_STR,
 ;         CALCULATE, str_to_int, int_to_str 
 main proc near 
-    ;Žá­®¢­®¥ â¥«® ¯à®£à ¬¬ë 
-    push ax
+    ; Main program body
+    push ax      ; Push values to stack
     push dx
                       
-    mov  buf[0],5     ; Ž¯à¥¤¥«¨¬ à §¬¥à ¢å®¤­®£® ¡ãä¥à  (4 á¨¬¢®«  + CR)
-                      ; ¥ «ì­ë© à §¬¥à ¡ãä¥à  ¯®á«¥ çâ¥­¨ï 1¡+1¡+5¡=7¡   
+    mov  buf[0],5     ; Size of input buffer (4 symbol + CR)
+                      ; Real size after reading is 1¡+1¡+5¡=7¡   
    
-    ; Žç¨áâª  íªà ­  ¢ë¢®¤ áâà®ª¨ § £®«®¢ª  
+    ; Clear screen
     call clear_scr  
     lea dx, mess1     ;  ‡ £àã§¨¬  ¤à¥á áâà®ª¨ mess1 ¢ à¥£¨áâ
     call write_str    ;  ˆá¯®«ì§ã¥â int 21h ¤«ï ¢ë¢®¤  áâà®ª¨  § ª.áï $
@@ -347,18 +346,31 @@ cr  proc near
 cr endp 
 
 
-; Žç¨áâª  ¢á¥£® íªà ­ ,  ­ «®£¨ç­® cls, Int 10h
+; Clear screen, same as cls, INT 10h, using AH = 6 function. 
+;    
+; AH = 6 parameters :
+;
+; AL = lines to scroll (0 = clear, CH, CL, DH, DL are used),
+;
+; BH = Background Color and Foreground color. 
+; BH = 43h, means that background color is red and foreground color is cyan.
+; Refer the BIOS color attributes 
+;
+; CH = Upper row number, 
+; CL = Left column number, 
+; DH = Lower row number, 
+; DL = Right column number
 clear_scr proc near 
    push ax
    push bx
    push cx
    push dx
-   xor al,al        ; al:=0 Žç¨áâ¨âì ®ª­®
-   xor cx,cx        ; cx:=0 ‚¥àå­¨© «¥¢ë© ã£®« (0,0)
-   mov dh,24        ; ¨¦­ïï áâà®ª  íªà ­   24
-   mov dl,79        ; à ¢ë© áâ®«¡¥æ íªà ­  79
-   mov bh,7         ; ®à¬ «ì­ë¥  âà¨¡ãâë ®ç¨áâª¨
-   mov ah,6         ; ¢ë§®¢ äã­ªæ¨¨ scroll_up 
+   xor al,al        ; al:=0 Clear window
+   xor cx,cx        ; cx:=0 Top left corner (0,0). CX = CH + CL
+   mov dh,24        ; Screen botom row 24
+   mov dl,79        ; Right screen column 79
+   mov bh,7         ; Normal clear attributes (Color of symbols)
+   mov ah,6         ; Call scroll_up function, that scroll window up and add new rows after.
    int 10h
    pop dx
    pop cx
@@ -411,10 +423,3 @@ codesg  ends
 ; ª®­¥æ ¯à®£à ¬¬ë
 end start
 
-
-    
-   
-   
-   
-
-  
