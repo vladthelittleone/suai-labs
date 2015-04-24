@@ -279,15 +279,16 @@ IS_PLUS:
    inc bp            ; It is '+', Go to next symbol 
    dec cl            ; Decrement counter of characters in buffer
 GO:
-   xor ax,ax         ; AX reg. to zero. 
-   xor dx,dx         ; DX reg. to zero.   
-   mov dl,[bp]       ; ‚ Dl ‘¨¬¢®«ë ¢ë¡¨à ¥¬ë¥ ¨§ áâà®ª¨ 
-   inc bp            ; Š á«¥¤ãîé¥¬ã ¡ ©âã áâà®ª¨
-   cmp dl,30h        ; à®¢¥à¨¬ ­   dl < '0'
-   jl ERROR          ; â® ASCII ª®¤ ¬¥­ìè¥ ç¥¬ '0' (+,- ã¦¥ ¯à®¢¥à¥­ë)          
-   cmp dl,39h        ; à®¢¥à¨¬ ­   dl > '9'   
-   jg ERROR          ; „ , ­¥ ¬®¦¥â ¡ëâì á¨¬¢®«  ¡®«ìè¥ 9 (®è¨¡ª )        
-   sub  dl,30h       ; â® æ¨äà  ®â 0 ¤® 9 => Dl  
+   xor ax,ax         ; AX reg. to zero 
+   xor dx,dx         ; DX reg. to zero   
+   mov dl,[bp]       ; Move symbols form string to DL reg
+   inc bp            ; Increment addres and get next character of string
+   cmp dl,30h        ; Check  dl < '0' - 30h
+   jl  ERROR         ; This ASCII less then '0' (+,- already checked)          
+   cmp dl,39h        ; Check  dl > '9'   
+   jg  ERROR         ; This ASCII more then 9' (ERROR)        
+   sub dl,30h        ; Convert number character to integerand (code of character - 30h = number),
+                     ; save to Dl reg.  
    mov al,10         ; ‘®¬­®¦¨â¥«î ¯®«®¦¥­® ¡ëâì ¢ Al
    mul bl            ; ( ˆ§­ ç «ì­® = 0 )
    jo BAIT_OF        ; ¥à¥¯®«­¥­¨¥ à.á¥âª¨ ¡ ©â  
