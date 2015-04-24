@@ -1,4 +1,4 @@
-                    title FirsLab
+title FirsLab
 ;
 codesg segment para "code" ; Code segment start. (codesg - segment name, para - segment adress a multiply of 16, "code" - type of segment) 
 assume cs:codesg, ds:codesg,  ss:codesg,  es:codesg ; Set functionality of segment. It can be stack, code, etc. In com file one segment - code. 	
@@ -37,8 +37,8 @@ main proc near
    
     ; Clear screen
     call clear_scr  
-    lea dx, mess1     ;  ‡ £àã§¨¬  ¤à¥á áâà®ª¨ mess1 ¢ à¥£¨áâ
-    call write_str    ;  ˆá¯®«ì§ã¥â int 21h ¤«ï ¢ë¢®¤  áâà®ª¨  § ª.áï $
+    lea dx, mess1     ;  Link dx register to mess1 adress. Formaly dx is pointer to mess1.
+    call write_str    ;  Using int 21h for string output. Need DS:DX = pointer to string ending in "$". 
     call cr
     
      ; à¨£« è¥­¨¥ ª ¢¢®¤ã á¨¬¢®«  € 
@@ -326,18 +326,24 @@ DONE:
    ret
 str_to_int endp
 
-; ¥à¥¢®¤ áâà®ª¨ ¨ ¢®§¢à â ª à¥âª¨ 
+; Newline and carriage return with teletype output.     
+;
+; Function AH = 0Eh params:
+;         
+; AL = Character, 
+; BH = Page Number,
+; BL = Color (only in graphic mode)
 cr  proc near 
   push ax
   push bx
   push cx
   mov  bh,0     
   mov  cx,1
-  mov  al,0Dh  ; ¥à¥¢®¤ áâà®ª¨
-  mov  ah,0eh  ; à¥¦¨¬ ®â®¡à ¦¥­¨ï TTY ( ¡®â îâ ã¯à ¢«ïîé¨¥ ª®¤ë)
+  mov  al,0Dh  ; Carriage return
+  mov  ah,0eh  ; Teletype output (TTY)
   int 10h
-  mov  al,0Ah  ; ‚®§¢à â ª à¥âª¨
-  mov  ah,0eh  ; 
+  mov  al,0Ah  ; Newline
+  mov  ah,0eh  ; Teletype output (TTY) 
   int 10h
   pop cx
   pop bx 
@@ -376,7 +382,7 @@ clear_scr proc near
    pop cx
    pop bx
    pop ax
-   ret
+   ret              ; Return from function, to call program. Reset eip/ip.
 clear_scr endp    
 
 ; ‚ë¢®¤ "."
@@ -393,8 +399,20 @@ pop ax
 ret 
 dot endp
 
-; ‚ë¢®¤¨â áâà®ªã ­  íªà ­ int 21h 
-; ‘âà®ª  § £àã¦¥­  DS:DX § ¢¥àè ¥âáï á¨¬¢®«®¬ $  
+; Write string to standart buffer, int 21h   
+;
+; AH = 09         
+;   
+; parameters:
+;
+; DS:DX = pointer to string ending in "$"   
+;
+; returns nothing    
+;
+; - outputs character string to STDOUT up to "$"
+; - backspace is treated as non-destructive
+; - if Ctrl-Break is detected, INT 23 is executed
+
 write_str proc near 
   push ax
   mov ah,09h
@@ -418,8 +436,10 @@ read_str endp
 dos_exit proc
 int 20h 
 dos_exit endp 
+
 ; ª®­¥æ á¥£¬¥­â  
-codesg  ends
+codesg  ends    
+
 ; ª®­¥æ ¯à®£à ¬¬ë
 end start
 
