@@ -33,7 +33,7 @@ main proc near
     push dx
                       
     mov  buf[0],5     ; Size of input buffer (4 symbol + CR)
-                      ; Real size after reading is 1¡+1¡+5¡=7¡ 
+                      ; Real size after reading is 1b+1b+5b=7b 
                       ; See INT 21 AH = 0Ah function for buffer structure.  
    
     ; Clear screen
@@ -237,11 +237,18 @@ write_result endp
 
 
 
-; ‘’ŽŠ€ ¢ DS:DX   
+; INPUT PARAMTER: String in DS:DX register.
+;  
 ; ¥à¥¢®¤¨â â¥ªáâ®¢ãî áâà®ªã ¢ ç¨á«® á® §­ ª®¬ à §¬¥à®¬ ¡ ©â 
 ; ¢®§¢à â ¢ DOS ¯à¨ ¯¥à¥¯®«­¥­¨¨ à §àï¤­®© á¥âª¨  ¨ ­¥¤®¯ãáâ¨¬ëå á¨¬¢®« å ¢ 
-; áâà®ª¥ (¤®¯ãáâ¨¬ë á¨¬¢®«ë - + 0..9 ¢ ¥áâ¥áâ¢¥­­®¬ ¯®àï¤ª¥ á«¥¤®¢ ­¨ï)
-; ‚ë§ë¢ ¥â GOTO_XY, WRITE_STR, 
+; áâà®ª¥ (¤®¯ãáâ¨¬ë á¨¬¢®«ë - + 0..9 in the natural order)
+; Call GOTO_XY, WRITE_STR, 
+;
+; Translate string into integer with sign, byte size.
+; Return to DOS with grid overflow and entering invalid characters 
+; (allowable symbols is '-', '+', 0..9 in the natural order)
+; Call GOTO_XY, WRITE_STR, etc.
+;
 
 str_to_int proc near 
    push ax
@@ -250,29 +257,30 @@ str_to_int proc near
    push bp
    push si
    xor  bx,bx  
-   xor  cx,cx       ; Ž¡­ã«¨¬ à¥£¨áâà áç¥âç¨ª 
-   mov  bp,dx       ; ‡ ­¥á¥¬  ¤à¥á áâà®ª¨ ¢ Bp 
-   xor  dx,dx       ; —¥à¥§ íâ®â à¥£¨áâà ¢®§¢à â¨¬ §­ ç¥­¨¥
-   mov si,0         ; ‡­ ª ¯® ã¬®«ç ­¨î +  
-   mov bl,0         ; à®¬¥¦ãâ®ç­®¥ åà ­¥­¨¥ à¥§ã«ìâ â  
-   inc bp           ; ‘¯®§¨æ¨®­¨àã¥¬ ­  ç¨á«® ¯à®ç¨â ­­ëå á¨¬¢®«®¢ 
-   mov cl,[bp]      ; ‡ ­¥áª¬ ¢ Cl ç¨á«® ¯à®ç¨â ­­ëå á¨¬¢®«®¢ 
-   inc bp           ; ®§¨æ¨®­¨àã¥¬ ¨­¤¥ªá ­  1© á¨¬¢®« ¢ áâà®ª¥
-   mov dl,[bp]      ; ®á¬®âà¨¬ 1 á¨¬¢®« (à®¢¥à¨¬ §­ ª «¨ íâ® ?)
-   cmp dl,2dh       ; â® '-' ?   
-   jne PLUS         ; ¥â íâ® ­¥ '-' (®¯à®¡ã¥¬ ¯à®¢¥à¨âì ­  '+')   
-   mov si,1         ; „  íâ® '-' , ‡ ¯®¬­¨¬ §­ ª ç¨á«  
-   inc bp           ; ¥à¥©¤¥¬ ª á«¥¤ãîé¥¬ã á¨¬¢®«ã; 
-   dec cl           ; “¬¥­ìè¨¬ áç¥âç¨ª ®¡à ¡ âë¢ ¥¬ëå á¨¬¢®«®¢ (ã¦¥ 1 ®¡à ¡®â ­)
+   xor  cx,cx       ; Count register to zero
+   mov  bp,dx       ; Adress of string to BP register
+   xor  dx,dx       ; DX - return register
+   mov si,0         ; Custim sign is '+' 
+   mov bl,0         ; Store intermediate result
+   inc bp           ; Increment addres and get second element of buffer - number of characters returned with read buffer.
+                    ; See read_str proc.
+   mov cl,[bp]      ; Move to Cl number of characters in read buffer
+   inc bp           ; Increment addres and get first input character
+   mov dl,[bp]      ; Get first symbol and check - sign or not?
+   cmp dl,2dh       ; It's '-' ? (If dl store 2dh = '-', then ZF = 1)
+   jne IS_PLUS      ; It's not '-' (Check for '+')   
+   mov si,1         ; It is '-' , set sign of number 
+   inc bp           ; Go to next symbol
+   dec cl           ; Decrement counter of characters in buffer (1 already compute)
    jmp GO
-PLUS:   
-   cmp dl,2bh        ; â® '+' ? 
-   jne GO            ; …’ íâ® ­¥ ¯«îá
-   inc bp            ; „  íâ® '+', ¥à¥©¤¥¬ ª á«¥¤ãîé¥¬ã á¨¬¢®«ã;  
-   dec cl            ; “¬¥­ìè¨¬ áç¥âç¨ª ®¡à ¡ âë¢ ¥¬ëå á¨¬¢®«®¢ 
+IS_PLUS:   
+   cmp dl,2bh        ; It's '+' ? (If dl store 2bh = '+', then ZF = 1)
+   jne GO            ; It isn't '+' (No sign in string. The number is positive.)
+   inc bp            ; It is '+', Go to next symbol 
+   dec cl            ; Decrement counter of characters in buffer
 GO:
-   xor ax,ax         ;  
-   xor dx,dx         ;    
+   xor ax,ax         ; AX reg. to zero. 
+   xor dx,dx         ; DX reg. to zero.   
    mov dl,[bp]       ; ‚ Dl ‘¨¬¢®«ë ¢ë¡¨à ¥¬ë¥ ¨§ áâà®ª¨ 
    inc bp            ; Š á«¥¤ãîé¥¬ã ¡ ©âã áâà®ª¨
    cmp dl,30h        ; à®¢¥à¨¬ ­   dl < '0'
