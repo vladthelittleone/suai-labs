@@ -280,39 +280,39 @@ IS_PLUS:
    dec cl            ; Decrement counter of characters in buffer
 GO:
    xor ax,ax         ; AX reg. to zero 
-   xor dx,dx         ; DX reg. to zero   
+   xor dx,dx         ; DX reg. to zero - return register 
    mov dl,[bp]       ; Move symbols form string to DL reg
    inc bp            ; Increment addres and get next character of string
    cmp dl,30h        ; Check  dl < '0' - 30h
    jl  ERROR         ; This ASCII less then '0' (+,- already checked)          
    cmp dl,39h        ; Check  dl > '9'   
    jg  ERROR         ; This ASCII more then 9' (ERROR)        
-   sub dl,30h        ; Convert number character to integerand (code of character - 30h = number),
-                     ; save to Dl reg.  
-   mov al,10         ; ‘®¬­®¦¨â¥«î ¯®«®¦¥­® ¡ëâì ¢ Al
-   mul bl            ; ( ˆ§­ ç «ì­® = 0 )
-   jo BAIT_OF        ; ¥à¥¯®«­¥­¨¥ à.á¥âª¨ ¡ ©â  
-   mov bl,al         ; ‘®åà ­¨¬ ¯à®¬¥¦ãâ®ç­®¥ ¯à®¨§¢¥¤¥­¨¥ 
-   add ax,dx         ; ‘«®¦¨¬ ¯à®¬¥¦ ¯à®¨§¢¥¤¥­¨¥ ¨ ®ç¥à¥¤­®© à §àï¤
-   cmp ax,128     
-   jg BAIT_OF
-   mov bl,al         ; ‘®åà ­¨¬ ¯à®¬¥¦ãâ®ç­ë© à¥§ã«ìâ â  
-   loop GO           ; €¢â®¬ â¨ç¥áª¨ ã¬¥­ìè ¥â CX ­  1 
-   ; Ž¯à¥¤¥«¥­¨¥ §­ ª  ç¨á«   
-   cmp si,0          ; ‡­ ª + ?
+   sub dl,30h        ; Convert number character to integer and (code of character - 30h = number),
+                     ; save to Dl reg     
+   mov al,10         ; Multiplier in Al, because operand is byte type. Result store in AX reg
+   mul bl            ; Multiplier ( Firstly BL = 0 )
+   jo OVERFLOW       ; Execute lable, if have overflow
+   mov bl,al         ; Save intermediate result (Multiply result) 
+   add ax,dx         ; Summarize intermediate result and next discharge
+   cmp ax,128        ; 1111111 = 128
+   jg OVERFLOW       ; Call OVERFLOW label, if AX value more then 128
+   mov bl,al         ; Save intermediate result
+   loop GO           ; Automaticly  decreases CX on 1 
+                     ; determine number sign
+   cmp si,0          ; Is '+' ?
    jne SET_MINUS     ; ç¨á«® ®âà¨æ â¥«ì­®¥ (­ ¤® ¯¥à¥¢¥áâ¨ ¢ ¤®¯ ª®¤)       
    test bl,80h        ; ¥â  ç¨á«® <127
-   jnz BAIT_OF        ; „«ï §­ ª®¢®£® ç¨á«  íâ® ¬­®£® >127
+   jnz OVERFLOW       ; „«ï §­ ª®¢®£® ç¨á«  íâ® ¬­®£® >127
    jmp DONE          ; ‚á¥ ŽŠ + ç¨á«® ¢ ¤¨ ¯ §®­¥ <=127
 ; 
 SET_MINUS:    
     neg  bl          ; ¥à¥¢¥¤¥¬ ç¨á«® ¢ ¤®¯ ª®¤
     test bl,80h      ; —¨á«® ¬¥­ìè¥ -128 
-    jz  BAIT_OF      ; „  ®­® ¬¥­ìè¥
+    jz  OVERFLOW     ; „  ®­® ¬¥­ìè¥
     jmp DONE         ; …á«¨ ­¥â ¯¥à¥¯®«­¥­¨ï â® ¢á¥ ŽŠ     
 ; 
 ; Ž¡à ¡®âª  ¯¥à¥¯®«­¥­¨ï à §àï¤­®© á¥âª¨ 
-BAIT_OF: 
+OVERFLOW: 
      call cr
      lea dx, errmsg1 
      call write_str
