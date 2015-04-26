@@ -1,4 +1,4 @@
-                    title FirsLab
+title FirsLab
 ;
 codesg segment para "code" ; Code segment start. (codesg - segment name, para - segment adress a multiply of 16, "code" - type of segment) 
 assume cs:codesg, ds:codesg,  ss:codesg,  es:codesg ; Set functionality of segment. It can be stack, code, etc. In com file one segment - code. 	
@@ -66,7 +66,17 @@ main proc near
    ret
    ;ª®­¥æ ¯à®æ¥¤ãàë
 main endp    
-
+   
+; Number enter procedure.
+; Result conatins in DL reg.
+enter_number proc near  
+    call cr
+    call write_str    ; String output    
+    
+    lea dx, buf       ; Put buffer address to dx. Buffer adress now in DS:DX.
+    call read_str     ; Read string to buffer, using int 21h.
+    call str_to_int   ; Translate string to integer. Result writed to DX reg. 
+enter_number endp 
 
 ; Parameters:
 ; AL - number that must be converted to string.   
@@ -344,42 +354,42 @@ GO:
    ;  
    ; Also checking overflow, because input numbers must be byte type!
    ;############################## 
-                
-   mov al,10         ; Multiplier in Al, because operand is byte type. Result store in AX reg
-   mul bl            ; Multiplier ( Firstly BL = 0 )
-   jo OVERFLOW       ; Execute lable, if have overflow
-   add ax,dx         ; Summarize intermediate result and next discharge
-   cmp ax,128        ; 10000000 = 128
-   jg OVERFLOW       ; Call OVERFLOW label, if AX value more then 128
-   mov bl,al         ; Save intermediate result
-   loop GO           ; Automaticly  decreases CX on 1 
-                     ; determine number sign
-   cmp si,0          ; Is '+' ?
-   jne SET_MINUS     ; It's '-', negative number (need translate into additional code)       
-   test bl,80h       ; Number is less then 127? (80h = 128)
-                     ; TEST is equivalent of cmp command, but more faster    
-                     ; TEST instruction performs a bitwise AND on two operands 
-                     ; TEST example:
-                     ; 00001001 AND 10000000 = 0000000 - zero  
-                     ; 11111111 AND 10000000 = 1000000 - not zero
-   jnz OVERFLOW      ; Execute lable OVERFLOW, because BL reg. value > 127. (TEST result not zero) 
+                      
+   mov al,10          ; Multiplier in Al, because operand is byte type. Result store in AX reg
+   mul bl             ; Multiplier ( Firstly BL = 0 )
+   jo OVERFLOW_ERROR  ; Execute lable, if have overflow
+   add ax,dx          ; Summarize intermediate result and next discharge
+   cmp ax,128         ; 10000000 = 128
+   jg OVERFLOW_ERROR  ; Call OVERFLOW label, if AX value more then 128
+   mov bl,al          ; Save intermediate result
+   loop GO            ; Automaticly  decreases CX on 1 
+                      ; determine number sign
+   cmp si,0           ; Is '+' ?
+   jne SET_MINUS      ; It's '-', negative number (need translate into additional code)       
+   test bl,80h        ; Number is less then 127? (80h = 128)
+                      ; TEST is equivalent of cmp command, but more faster    
+                      ; TEST instruction performs a bitwise AND on two operands 
+                      ; TEST example:
+                      ; 00001001 AND 10000000 = 0000000 - zero  
+                      ; 11111111 AND 10000000 = 1000000 - not zero
+   jnz OVERFLOW_ERROR ; Execute lable OVERFLOW, because BL reg. value > 127. (TEST result not zero) 
    
    ;##############################  
    
-   jmp DONE          ; Ok, BL value < 127
+   jmp DONE            ; Ok, BL value < 127
 ; 
 SET_MINUS:    
-    neg  bl          ; Translate into additional code
-    test bl,80h      ; Number is less then -128 (-128 in add. code is 110000000)
-                     ; TEST example:  
-                     ; -129 = 10000001 01111110 01111111 101111111
-                     ; 110000000 AND 10000000 = 10000000 - not zero
-                     ; 101111111 (-129) AND 10000000 = 000000000 - zero
-    jz  OVERFLOW     ; Number is less then -128 (TEST result is zero)
-    jmp DONE         ; Ok, BL value > -128. No overflow.    
+    neg  bl            ; Translate into additional code
+    test bl,80h        ; Number is less then -128 (-128 in add. code is 110000000)
+                       ; TEST example:  
+                       ; -129 = 10000001 01111110 01111111 101111111
+                       ; 110000000 AND 10000000 = 10000000 - not zero
+                       ; 101111111 (-129) AND 10000000 = 000000000 - zero
+    jz  OVERFLOW_ERROR ; Number is less then -128 (TEST result is zero)
+    jmp DONE           ; Ok, BL value > -128. No overflow.    
 ; 
 ; Grid overflow error.
-OVERFLOW: 
+OVERFLOW_ERROR: 
      call cr
      lea dx, errmsg1 
      call write_str
@@ -548,17 +558,6 @@ read_str endp
 dos_exit proc
     int 20h 
 dos_exit endp 
-
-; Number enter procedure.
-; Result conatins in DL reg.
-enter_number proc near  
-    call cr
-    call write_str    ; String output    
-    
-    lea dx, buf       ; Put buffer address to dx. Buffer adress now in DS:DX.
-    call read_str     ; Read string to buffer, using int 21h.
-    call str_to_int   ; Translate string to integer. Result writed to DX reg. 
-enter_number endp 
     
 ; Segment end.
 codesg  ends    
