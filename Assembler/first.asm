@@ -15,7 +15,7 @@ start:
    errmsg1 db  "Overflow digit grid$"  
    errmsg2 db  "Division by zero$"
    
-   mess1 db "Enter the 3 decimal numbers, D*A/(A+B)$"
+   mess1 db "Enter the 3 decimal numbers, D*2/(A+B)$"
    mess2 db 'A = $'
    mess3 db 'B = $'
    mess5 db 'D = $'
