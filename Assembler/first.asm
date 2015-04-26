@@ -1,9 +1,10 @@
-                    title FirsLab
-;
-codesg segment para "code" ; Code segment start. (codesg - segment name, para - segment adress a multiply of 16, "code" - type of segment) 
-assume cs:codesg, ds:codesg,  ss:codesg,  es:codesg ; Set functionality of segment. It can be stack, code, etc. In com file one segment - code. 	
-                                  
-org 100h       ; Program start in the end of PSP, CS eq to segment adress of psp, IP eq to 100h
+title FirsLab
+; Code segment start. (codesg - segment name, para - segment adress a multiply of 16, "code" - type of segment) 
+codesg segment para "code" 
+; Set functionality of segment. It can be stack, code, etc. In com file one segment - code. 	
+assume cs:codesg, ds:codesg,  ss:codesg,  es:codesg 
+; Program start in the end of PSP, CS eq to segment adress of psp, IP eq to 100h
+org 100h       
 
 start:
    jmp main    ; Passing through the data. (in *.COM file 1 segment only for code )
