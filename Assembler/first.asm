@@ -4,7 +4,7 @@ codesg segment para "code"
 ; Set functionality of segment. It can be stack, code, etc. In com file one segment - code. 	
 assume cs:codesg, ds:codesg,  ss:codesg,  es:codesg 
 ; Program start in the end of PSP, CS eq to segment adress of psp, IP eq to 100h
-org 100h       
+org 100h
 
 start:
    jmp main    ; Passing through the data. (in *.COM file 1 segment only for code )
@@ -62,10 +62,10 @@ main proc near
         
     call calculate; 
     call write_result; 
-    call dos_exit           ; ‚ëå®¤ ¢ DOS 
-    ;‚®§¢à â ã¯à ¢«¥­¨ï á¨áâ¥¬¥ (¯àë£ ¥¬ ­  int 20h ¢ ­ ç «¥ PSP)
+    call dos_exit           ; Exit in DOS
+    ; Return controll to system (Move to int 20h in start of PSP)
    ret
-   ;ª®­¥æ ¯à®æ¥¤ãàë
+   ; Procedure end
 main endp    
    
 ; Number enter procedure.
