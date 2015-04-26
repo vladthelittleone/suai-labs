@@ -1,4 +1,4 @@
-title FirsLab
+                    title FirsLab
 ;
 codesg segment para "code" ; Code segment start. (codesg - segment name, para - segment adress a multiply of 16, "code" - type of segment) 
 assume cs:codesg, ds:codesg,  ss:codesg,  es:codesg ; Set functionality of segment. It can be stack, code, etc. In com file one segment - code. 	
@@ -14,19 +14,18 @@ start:
    errmsg1 db  "Overflow digit grid$"  
    errmsg2 db  "Division by zero$"
    
-   mess1 db "Enter the 3 decimal numbers, (d*a)/(a+b)$"
+   mess1 db "Enter the 3 decimal numbers, D*A/(A+B)$"
    mess2 db 'A = $'
    mess3 db 'B = $'
-   mess4 db 'D = $'
+   mess5 db 'D = $'
   
   
    var_a  db 0     ; A variable
-   var_b  db 0     ; B variable
+   var_b  db 0     ; B variable    
    var_d  db 0     ; D variable
    
-; Data input and calculation (d*a)/(a+b)
-; Calls GOTO_XY, WRITE_STR, READ_STR,
-;         CALCULATE, str_to_int, int_to_str 
+; Data input and calculation D*A/(A+B)
+; Calls goto_xy, write_str, read_str, calculate, str_to_int, int_to_str 
 main proc near 
     ; Main program body
     push ax      ; Push values to stack
@@ -42,38 +41,22 @@ main proc near
     call write_str    ; Using int 21h for string output. Need DS:DX = pointer to string ending in "$". 
     call cr
     
-     ; Enter symbol A
+    ; Enter symbol A
     lea dx, mess2     ; Put string number to Dx = (mov dx, offset mess2)
-    call write_str    ; String output 
-      
-   
-    lea dx, buf       ; Put buffer address to dx. Buffer adress now in DS:DX.
-    call read_str     ; Read string to buffer, using int 21h.
-    call str_to_int   ; Translate string to integer. Result writed to DX reg.   
+    call enter_number ; Integer result in DL reg.
     mov var_a,dl   
     
    
-    ; à¨£« è¥­¨¥ ª ¢¢®¤ã á¨¬¢®«  B 
-    call cr
-    lea dx, mess3     ;  ‡ £àã§ª   ¤à¥á  áâà®ª¨ ¢ Dx
-    call write_str    ;  ‚ë¢®¤ áâà®ª¨ $   
-    
-    lea dx, buf       ;  ‡ £àã§ª  ,¡ãä¥à  ¢¢®¤¨¬ëå á¨¬¢®«®¢ ¢ Dx
-    ; ¤à¥á ¡ãä¥à  ¢ DS:DX 
-    call read_str     ;  —â¥­¨¥ áâà®ª¨ ¢ ¡ãä¥à int 21h
-    call str_to_int   ;  ¥§ã«ìâ â ¢ DX   
+    ; Enter symbol B
+    lea dx, mess3     ; Put string number to Dx = (mov dx, offset mess2)
+    call enter_number ; Integer result in DL reg.   
     mov var_b,dl
-   
-     ; à¨£« è¥­¨¥ ª ¢¢®¤ã á¨¬¢®«  D 
-    call cr 
-    lea dx, mess4     ;  ‡ £àã§ª   ¤à¥á  áâà®ª¨ ¢ DS:DX
-    call write_str    ;  ‚ë¢®¤ áâà®ª¨ $   
+         
+    ; Enter symbol D
+    lea dx, mess5     ; Put string number to Dx = (mov dx, offset mess2)
+    call enter_number ; Integer result in DL reg.
+    mov var_d,dl  
     
-    lea dx, buf       ;  ‡ £àã§ª  ,¡ãä¥à  ¢¢®¤¨¬ëå á¨¬¢®«®¢ ¢ Dx
-    ; ¤à¥á ¡ãä¥à  ¢ DS:DX 
-    call read_str     ;  —â¥­¨¥ áâà®ª¨ ¢ ¡ãä¥à int 21h
-    call str_to_int   ;  ¥§ã«ìâ â ¢ DX   
-    mov var_d,dl
     call cr    
         
     call calculate; 
@@ -85,9 +68,10 @@ main proc near
 main endp    
 
 
-; —¨á«® § £àã¦¥­® ¢ Al   
-; ¥à¥¢®¤ —¨á«  ¢ áâà®ªã § £àã¦¥­­ãî ¢ DS:DX
-Int_To_Str proc near
+; Parameters:
+; AL - number that must be converted to string.   
+; DS:DX - pointer to string.
+int_to_str proc near
   push ax
   push bx 
   push cx
@@ -95,38 +79,47 @@ Int_To_Str proc near
   push bp 
   
 
-  xor cx,cx      ; ‘ç¥âç¨ª § ¯¨á ­­ëå ¢ áâ¥ª á¨¬®«®¢   
-  mov bp,dx      ; €¤à¥á áâà®ª¨ § ­¥á¥¬ ¢ Bp
-  xor dx,dx                    
-  mov bl,10      ; ®ª § â¥«ì ‘‘ = 10
+  xor cx,cx      ; Symbol counter
+  mov bp,dx      ; String adress move to BP
+  xor dx,dx      ; Clear dx             
+  mov bl,10      ; Base = 10
 
-  cmp al,0h       
-  jg PUSHASCII     
-  jz PUSHASCII       
+  cmp al,0h           
+  jg PUSH_ASCII  ; AL gretter then 0  
+  jz PUSH_ASCII  ; AL equal to 0   
   
   neg al 
   ;mov[bp],2dh            
   inc bp
+
+; Convert integer to ASCII code and push it to stack. 
+; ###################################### 
+
+PUSH_ASCII:
+  cbw             ; Extension of the AX to double word DX:AX
+  xor ah,ah       ; Clear AH, nothing there. Store in AH modulo
+  div bl          ; Division on 10
+                  ; After division in AL integer part, in AH - modulo
+  add ah,30h      ; Get ASCII symbol of number integer partr, and save in AH reg.
+  mov dl,ah       ; Move to DL
+  push dx         ; Push ASCII symbol in stack
+  inc cl          ; Increase stack symbol counter (See loop in POP_ASCII)
+  cmp al,0        ; While integer part <> 0
+  jnz PUSH_ASCII  ; Execute division (transmit to base 10)
   
-PUSHASCII:
-  cbw             ;
-  xor ah,ah
-  div bl          ; ®á«¥ ¤¥«¥­¨ï ¢  Al æ¥« ï ç áâì, ‚ Ah - ®áâ â®ª
-  add ah,30h      ; ®«ãç¨«¨ ASCII á¨¬¢®« æ¨äàë ®áâ âª  ¢  ah
-  mov dl,ah        
-  push dx         ; ‡ â®«ª­¥¬ ASCII á¨¬¢®« ¢ áâ¥ª
-  inc cl          ; “¢¥«¨ç¨¬ áç¥âç¨ª § ¯¨á ­­ëå ¢ áâ¥ª á¨¬¢®«®¢ 
-  cmp al,0        ; ®ª  ç áâ­®¥  <> 0
-  jnz PUSHASCII   ; ¢ë¯®«­ï¥¬ ¤¥«¥­¨¥ (¯¥à¥¢®¤ ¢ 10 cc)
+; ######################################
   
-; ‚ëâ®«ª­¥¬ ¢á¥ ASCII ¨§ áâ¥ª  ¢ áâà®ªã
-POPASCII:
-  pop dx          ; ¢ë¯¨å­¥¬ ASCII ª®¤ ¨§ áâ¥ª  (‚ ®¡à â­®¬ ¯®àï¤ª¥)
-  mov [bp],dl     ; ‡ ­¥á¥¬ á¨¬¢®« ¢ áâà®ªã  
-  inc bp          ;  
-  loop POPASCII   ; 
-  
-  mov [bp],24h    ; ‡ ¢¥àè îé¨© á¨¬¢®« ¢ áâà®ª¥ $  
+; Pop ASCII symbols from stack to buffer      
+; ###################################### 
+
+POP_ASCII:
+  pop dx          ; Pop ASCII code from stack (in reverse)
+  mov [bp],dl     ; Move symbol to buffer (BP reg. pointer to buffer)
+  inc bp          ; Inrement adress 
+  loop POP_ASCII  ; While CX <> 0. 
+  mov [bp],24h    ; Set end symbol  - $
+
+; ######################################
   
   pop bp
   pop dx               
@@ -134,10 +127,10 @@ POPASCII:
   pop bx
   pop ax
   ret
-Int_To_Str endp  
+int_to_str endp  
 
 
-; Calculate (d*a)/(a+b). Result to reg DX.   
+; Calculate D*A/(A+B). Result to reg DX.   
 ;
 ; Result
 ; DL - quotient
@@ -148,45 +141,66 @@ calculate proc near
   push bx
   push cx
   
-  xor ax,ax        
-  mov  al,var_a   ; ‡ ­¥á¥¬ ¬­®¦¨â¥«ì ¢ Ax
-  imul var_d      ; (a*d)=>Dx (¥§ã«ìâ â ã¬­®¦¥­¨ï á«®¢®)
-  ; ‚ Ax ¤¥«¨¬®¥ à §¬¥à á«®¢® () 
+  ; MULTIPLY (D*A)
+  ;##############################  
   
-  ; (a+b)   ®«ãç¨«¨ ¤¥«¨â¥«ì  ¢ Bl
-  mov  Bl,var_a   ; 
-  add  Bl,var_b   ;
-  jo OVERFLOW     ;
-  jz DEVIDE_BZ    ;
+  xor ax,ax       ; Clear AX reg. 
+  mov  al,var_a   ; Set multiplyer in AL reg.
+  imul var_d      ; IMUL command is multiply with sign. 
+                  ; D*A => AX reg.
+   
+  ;##############################  
   
-  ; ‚ë¯®«­¨¬ ¤¥«¥­¨¥    (Ax / Bl) 
-  call devide     ;     
+  ; SUMMARIZE (A+B)
+  ;##############################    
   
-  ; ç áâ­®¥ ¢ Ax, ®áâ â®ª ¢ Dx 
-  ; à®¢¥à¨¬ ç áâ­®¥  
-  cmp ax,-128  ;
-  jl OVERFLOW
-  cmp ax,127  ;
-  jg OVERFLOW
+  mov  bl,var_a   ; Move A to BL reg. 
+  add  bl,var_b   ; Add to BL variable B. (A + B) 
+  jo OVERFLOW     ; Check for overflow  
+  jz DIVISION_BZ  ; Divider can't by zero
+    
+  ;############################## 
+      
+  ; DIVISION AX reg. (D*A) / BL reg. (A+B) 
+  ;##############################  
+   
+  call division    
   
-  ; ‘¤¥« ¥¬ ®áâ â®ª ¯®«®¦¨â¥«ì­ë¬  
+  ;##############################   
+  
+  ; AX - quotient
+  ; DX - modulo   
+  
+  ; Check quotient. 
+  cmp ax,-128 
+  jl OVERFLOW ; Less then -128
+  
+  cmp ax,127  
+  jg OVERFLOW ; Gretter then 127
+  
+  ; Set modulo positive
   cmp dx,0           
-  jg FINISH   
-  neg dx         
-  jmp FINISH
+  jg FINISH  ; If modulo positive, then move to FINISH   
+  neg dx     ; Change sign to '+'        
+  jmp FINISH ; Move to FINISH
+
+; Grid overflow error.  
 OVERFLOW: 
      call cr 
      lea dx, errmsg1 
      call write_str
-     call dos_exit
-DEVIDE_BZ:
+     call dos_exit  
+    
+; Division by zero error. 
+DIVISION_BZ:
      call cr
      lea dx, errmsg2 
      call write_str
-     call dos_exit
+     call dos_exit   
+     
 FINISH:  
-  mov Dh,Dl   ; ‘®åà ­¨¬ à¥§ã«ìâ â  Dh-®áâ â®ª  (“¦¥ ¡®«ìè¥ 0) 
-  mov Dl,Al   ; Dl-ç áâ­®¥
+  mov dh,dl   ; Save to DH modulo
+  mov dl,al   ; Save to DL quotient
   pop  cx
   pop  bx
   pop  ax
@@ -194,45 +208,59 @@ FINISH:
 calculate endp 
 
 
-; „¥«¥­¨¥ Ax/Bl — áâ­®¥ ¢ Ax Žáâ â®ª ¢ Dx 
-devide proc 
-push bx
-     cwd        ;  áè¨à¨¬ ¤¥«¨¬®¥ ¢ AX ¤® 2£® á«®¢    DX:AX
+; DIVISION AX / BL.
+; AX - quotient
+; DX - modulo
+division proc near 
+push bx     
+     ; Extension of the dividend to double word DX:AX
+     cwd     
+    
+     ; Extend the divider to word    
      push ax 
      mov al,bl 
-     cbw        ;  áè¨à¨¬ ¤¥«¨â¥«ì ¤® á«®¢  
-     mov bx,ax  ; 
-     pop  ax
-     ; „¥«¨¬®¥ ¢ DX:AX  „¥«¨â¥«ì ¢ BX 
+     cbw       
+     mov bx,ax  
+     pop  ax    
+     
+     ; Dividend in DX:AX.  Divider in BX reg. 
      idiv bx
-     ; — áâ­®¥ ¢ Ax ®áâ â®ª ¢ DX
 pop  bx  
 ret 
-devide endp 
+division endp 
    
    
-; ‚ë¢®¤ à¥§ã«ìâ â  ¤¥«¥­¨ï    
+; Write result to console  
 write_result proc
 push ax
 push dx
-       call cr                ; ¯¥à¥¢®¤ áâà®ª¨  
-       ; ‚ë¢®¤ — áâ­®£®
+       call cr                ; Newline   
+       
+       ; WRITE QUOTIENT
+       ; ##############   
+       
        xor ax,ax 
-       push dx
-       mov al,dl;
-       lea dx,buf; 
-       call int_to_str;
-       call write_str;        ;      
+       push dx 
+       mov al,dl              ; Move quotient to AL reg.
+       lea dx,buf             ; Set pointer to buffer.
+       call int_to_str
+       call write_str         
        
-       call dot               ; 
+       ; ##############   
        
-       ; ‚ë¢®¤ ®áâ âª          
+       call dot               ; Write dot
+       
+       ; WRITE MODULO
+       ; ##############    
+          
        xor ax,ax 
        pop dx
-       mov al,dh;
-       lea dx,buf; 
+       mov al,dh;             ; Move modulo to AL reg.
+       lea dx,buf;            ; Set pointer to buffer.
        call int_to_str;
-       call write_str;        ;      
+       call write_str;  
+       
+       ; ##############          
 pop dx 
 pop ax       
 ret
@@ -320,7 +348,6 @@ GO:
    mov al,10         ; Multiplier in Al, because operand is byte type. Result store in AX reg
    mul bl            ; Multiplier ( Firstly BL = 0 )
    jo OVERFLOW       ; Execute lable, if have overflow
-   ; mov bl,al         ; Save intermediate result (Multiply result) For what?
    add ax,dx         ; Summarize intermediate result and next discharge
    cmp ax,128        ; 10000000 = 128
    jg OVERFLOW       ; Call OVERFLOW label, if AX value more then 128
@@ -434,12 +461,24 @@ clear_scr proc near
    ret              ; Return from function, to call program. Reset eip/ip.
 clear_scr endp    
 
-; ‚ë¢®¤ "."
+; Function AH = 02 of INT 21H (Display Output)
+;
+; Parameter:
+;
+; DL = character to output
+; 
+; returns nothing
+;
+; - outputs character to STDOUT
+; - backspace is treated as non-destructive cursor left
+; - if Ctrl-Break is detected, INT 23 is executed
+;
+; "." Output
 dot proc near
 push ax
 push bx
 push cx
-  mov dl,2eh
+  mov dl,2eh ; '.' output
   mov ah,02h
   int 21h 
 pop cx
@@ -507,9 +546,20 @@ read_str endp
        
 ; Program exit
 dos_exit proc
-int 20h 
+    int 20h 
 dos_exit endp 
 
+; Number enter procedure.
+; Result conatins in DL reg.
+enter_number proc near  
+    call cr
+    call write_str    ; String output    
+    
+    lea dx, buf       ; Put buffer address to dx. Buffer adress now in DS:DX.
+    call read_str     ; Read string to buffer, using int 21h.
+    call str_to_int   ; Translate string to integer. Result writed to DX reg. 
+enter_number endp 
+    
 ; Segment end.
 codesg  ends    
 
