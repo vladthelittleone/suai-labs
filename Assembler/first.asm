@@ -61,10 +61,10 @@ main proc near
         
     call calculate; 
     call write_result; 
-    call dos_exit           ; ‚ëå®¤ ¢ DOS 
-    ;‚®§¢à â ã¯à ¢«¥­¨ï á¨áâ¥¬¥ (¯àë£ ¥¬ ­  int 20h ¢ ­ ç «¥ PSP)
+    call dos_exit           ; Exit in DOS 
+    ; Return control to system (Move to int 20h in start of PSP)
    ret
-   ;ª®­¥æ ¯à®æ¥¤ãàë
+   ; Procedure end
 main endp    
    
 ; Number enter procedure.
