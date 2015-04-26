@@ -1,4 +1,4 @@
-title FirsLab
+                    title FirsLab
 ;
 codesg segment para "code" ; Code segment start. (codesg - segment name, para - segment adress a multiply of 16, "code" - type of segment) 
 assume cs:codesg, ds:codesg,  ss:codesg,  es:codesg ; Set functionality of segment. It can be stack, code, etc. In com file one segment - code. 	
@@ -24,7 +24,7 @@ start:
    var_b  db 0     ; B variable    
    var_d  db 0     ; D variable
    
-; Data input and calculation D*A/(A+B)
+; Data input and calculation D*2/(A+B)
 ; Calls goto_xy, write_str, read_str, calculate, str_to_int, int_to_str 
 main proc near 
     ; Main program body
@@ -61,10 +61,10 @@ main proc near
         
     call calculate; 
     call write_result; 
-    call dos_exit           ; Exit in DOS 
-    ; Return control to system (Move to int 20h in start of PSP)
+    call dos_exit           ; ‚ëå®¤ ¢ DOS 
+    ;‚®§¢à â ã¯à ¢«¥­¨ï á¨áâ¥¬¥ (¯àë£ ¥¬ ­  int 20h ¢ ­ ç «¥ PSP)
    ret
-   ; Procedure end
+   ;ª®­¥æ ¯à®æ¥¤ãàë
 main endp    
    
 ; Number enter procedure.
@@ -140,7 +140,7 @@ POP_ASCII:
 int_to_str endp  
 
 
-; Calculate D*A/(A+B). Result to reg DX.   
+; Calculate D*2/(A+B). Result to reg DX.   
 ;
 ; Result
 ; DL - quotient
@@ -151,13 +151,13 @@ calculate proc near
   push bx
   push cx
   
-  ; MULTIPLY (D*A)
+  ; MULTIPLY (D*2)
   ;##############################  
   
   xor ax,ax       ; Clear AX reg. 
-  mov  al,var_a   ; Set multiplyer in AL reg.
+  mov  al,2       ; Set multiplyer in AL reg.
   imul var_d      ; IMUL command is multiply with sign. 
-                  ; D*A => AX reg.
+                  ; D*2 => AX reg.
    
   ;##############################  
   
@@ -171,7 +171,7 @@ calculate proc near
     
   ;############################## 
       
-  ; DIVISION AX reg. (D*A) / BL reg. (A+B) 
+  ; DIVISION AX reg. (D*2) / BL reg. (A+B) 
   ;##############################  
    
   call division    
