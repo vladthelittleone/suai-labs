@@ -137,8 +137,12 @@ POPASCII:
 Int_To_Str endp  
 
 
-; à®¨§¢®¤¨â ¢ëç¨á«¥­¨¥ (d*a)/(a+b) à¥§ã«ìâ â ¢  Dx
-; Dl-ç áâ­®¥ Dh-Žáâ â®ª
+; Calculate (d*a)/(a+b). Result to reg DX.   
+;
+; Result
+; DL - quotient
+; Dh - modulo
+;
 calculate proc near
   push ax
   push bx
@@ -237,31 +241,35 @@ write_result endp
 
 
 
-; INPUT PARAMTER: String in DS:DX register.
+; INPUT PARAMTER: String in DS:DX register. 
+; (Numbers in string must be byte types, else have overflow)
 ;  
-; ¥à¥¢®¤¨â â¥ªáâ®¢ãî áâà®ªã ¢ ç¨á«® á® §­ ª®¬ à §¬¥à®¬ ¡ ©â 
-; ¢®§¢à â ¢ DOS ¯à¨ ¯¥à¥¯®«­¥­¨¨ à §àï¤­®© á¥âª¨  ¨ ­¥¤®¯ãáâ¨¬ëå á¨¬¢®« å ¢ 
-; áâà®ª¥ (¤®¯ãáâ¨¬ë á¨¬¢®«ë - + 0..9 in the natural order)
-; Call GOTO_XY, WRITE_STR, 
-;
 ; Translate string into integer with sign, byte size.
 ; Return to DOS with grid overflow and entering invalid characters 
 ; (allowable symbols is '-', '+', 0..9 in the natural order)
-; Call GOTO_XY, WRITE_STR, etc.
+; Call GOTO_XY, WRITE_STR, etc.  
+; 
+; Result returns in DX reg.
 ;
-
-str_to_int proc near 
+str_to_int proc near  
+    
    push ax
    push bx
    push cx
    push bp
-   push si
+   push si  
+   
    xor  bx,bx  
-   xor  cx,cx       ; Count register to zero
+   xor  cx,cx       ; Count register to zero  
+   
    mov  bp,dx       ; Adress of string to BP register
    xor  dx,dx       ; DX - return register
    mov si,0         ; Custim sign is '+' 
    mov bl,0         ; Store intermediate result
+   
+   ; GET SIGN PART  
+   ;##############################   
+   
    inc bp           ; Increment addres and get second element of buffer - number of characters returned with read buffer.
                     ; See read_str proc.
    mov cl,[bp]      ; Move to Cl number of characters in read buffer
@@ -271,8 +279,12 @@ str_to_int proc near
    jne IS_PLUS      ; It's not '-' (Check for '+')   
    mov si,1         ; It is '-' , set sign of number 
    inc bp           ; Go to next symbol
-   dec cl           ; Decrement counter of characters in buffer (1 already compute)
-   jmp GO
+   dec cl           ; Decrement counter of characters in buffer (1 already compute)  
+   
+   ;##############################
+      
+   jmp GO 
+   
 IS_PLUS:   
    cmp dl,2bh        ; It's '+' ? (If dl store 2bh = '+', then ZF = 1)
    jne GO            ; It isn't '+' (No sign in string. The number is positive.)
@@ -280,7 +292,11 @@ IS_PLUS:
    dec cl            ; Decrement counter of characters in buffer
 GO:
    xor ax,ax         ; AX reg. to zero 
-   xor dx,dx         ; DX reg. to zero - return register 
+   xor dx,dx         ; DX reg. to zero - return register  
+   
+   ; CHECK FOR UNSUPPORTED SYMBOLS
+   ;##############################    
+   
    mov dl,[bp]       ; Move symbols form string to DL reg
    inc bp            ; Increment addres and get next character of string
    cmp dl,30h        ; Check  dl < '0' - 30h
@@ -288,37 +304,61 @@ GO:
    cmp dl,39h        ; Check  dl > '9'   
    jg  ERROR         ; This ASCII more then 9' (ERROR)        
    sub dl,30h        ; Convert number character to integer and (code of character - 30h = number),
-                     ; save to Dl reg     
+                     ; save to Dl reg 
+                      
+   ;##############################
+     
+     
+   ; FORM INTEGER FROM STRING  
+   ; 
+   ; Multiply intermediate result on 10, because of all 
+   ; demical numbers can represent as M = Mn*10n-1 + Mn-1*10n-2 + … + M2*10 + M1.  
+   ;  
+   ; Also checking overflow, because input numbers must be byte type!
+   ;############################## 
+                
    mov al,10         ; Multiplier in Al, because operand is byte type. Result store in AX reg
    mul bl            ; Multiplier ( Firstly BL = 0 )
    jo OVERFLOW       ; Execute lable, if have overflow
-   mov bl,al         ; Save intermediate result (Multiply result) 
+   ; mov bl,al         ; Save intermediate result (Multiply result) For what?
    add ax,dx         ; Summarize intermediate result and next discharge
-   cmp ax,128        ; 1111111 = 128
+   cmp ax,128        ; 10000000 = 128
    jg OVERFLOW       ; Call OVERFLOW label, if AX value more then 128
    mov bl,al         ; Save intermediate result
    loop GO           ; Automaticly  decreases CX on 1 
                      ; determine number sign
    cmp si,0          ; Is '+' ?
-   jne SET_MINUS     ; ç¨á«® ®âà¨æ â¥«ì­®¥ (­ ¤® ¯¥à¥¢¥áâ¨ ¢ ¤®¯ ª®¤)       
-   test bl,80h        ; ¥â  ç¨á«® <127
-   jnz OVERFLOW       ; „«ï §­ ª®¢®£® ç¨á«  íâ® ¬­®£® >127
-   jmp DONE          ; ‚á¥ ŽŠ + ç¨á«® ¢ ¤¨ ¯ §®­¥ <=127
+   jne SET_MINUS     ; It's '-', negative number (need translate into additional code)       
+   test bl,80h       ; Number is less then 127? (80h = 128)
+                     ; TEST is equivalent of cmp command, but more faster    
+                     ; TEST instruction performs a bitwise AND on two operands 
+                     ; TEST example:
+                     ; 00001001 AND 10000000 = 0000000 - zero  
+                     ; 11111111 AND 10000000 = 1000000 - not zero
+   jnz OVERFLOW      ; Execute lable OVERFLOW, because BL reg. value > 127. (TEST result not zero) 
+   
+   ;##############################  
+   
+   jmp DONE          ; Ok, BL value < 127
 ; 
 SET_MINUS:    
-    neg  bl          ; ¥à¥¢¥¤¥¬ ç¨á«® ¢ ¤®¯ ª®¤
-    test bl,80h      ; —¨á«® ¬¥­ìè¥ -128 
-    jz  OVERFLOW     ; „  ®­® ¬¥­ìè¥
-    jmp DONE         ; …á«¨ ­¥â ¯¥à¥¯®«­¥­¨ï â® ¢á¥ ŽŠ     
+    neg  bl          ; Translate into additional code
+    test bl,80h      ; Number is less then -128 (-128 in add. code is 110000000)
+                     ; TEST example:  
+                     ; -129 = 10000001 01111110 01111111 101111111
+                     ; 110000000 AND 10000000 = 10000000 - not zero
+                     ; 101111111 (-129) AND 10000000 = 000000000 - zero
+    jz  OVERFLOW     ; Number is less then -128 (TEST result is zero)
+    jmp DONE         ; Ok, BL value > -128. No overflow.    
 ; 
-; Ž¡à ¡®âª  ¯¥à¥¯®«­¥­¨ï à §àï¤­®© á¥âª¨ 
+; Grid overflow error.
 OVERFLOW: 
      call cr
      lea dx, errmsg1 
      call write_str
      call dos_exit
      
-; Ž¡à ¡®âª  ®è¨¡®ç­ëå á¨¬¢®«®¢ ()  
+; Not supported symols error.
 ERROR: 
      call cr 
      lea dx, errmsg0 
@@ -326,7 +366,7 @@ ERROR:
      call dos_exit
 DONE:
    xor dx,dx 
-   mov dl,bl
+   mov dl,bl ; Store result in DL reg.
    pop si
    pop bp
    pop cx
