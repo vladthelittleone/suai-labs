@@ -238,7 +238,12 @@ REPE SCASB     ;
                ; then call SCASB, else command after SCASB.
                ; Decrement CX reg. on loop.
                ;
-               ; SCASB - 
+               ; SCASB - instruction is used for searching a particular character 
+               ; or set of characters in a string. The data item to be searched
+               ; should be in AL (for SCASB), AX (for SCASW) or EAX (for SCASD) registers. 
+               ; The string to be searched should be in memory and pointed by the ES:DI (or EDI) 
+               ; register. 
+               
 ; Parse variable A
 
 MOV DL, CHAR_VAR_A
