@@ -1,3 +1,6 @@
+; Created by Evgeny Shinkarenko
+; Comments writed by Vladislav Skurishin
+
 INPUT_BUFFER_SIZE EQU 10
 OUTPUT_BUFFER_SIZE EQU 7
 POSITION_FOR_IPUTED_VARIABLE_IN_MESSAGE EQU 9
